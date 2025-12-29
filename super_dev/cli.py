@@ -1,0 +1,1351 @@
+# -*- coding: utf-8 -*-
+"""
+开发：Excellent（11964948@qq.com）
+功能：Super Dev CLI 主入口
+作用：提供命令行界面，统一访问所有功能
+创建时间：2025-12-30
+最后修改：2025-12-30
+"""
+
+import sys
+import argparse
+from pathlib import Path
+from typing import Optional
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+
+from . import __version__, __description__
+from .config import get_config_manager, ConfigManager
+from .orchestrator import WorkflowEngine, Phase
+
+
+class SuperDevCLI:
+    """Super Dev 命令行接口"""
+
+    def __init__(self):
+        self.console = Console() if RICH_AVAILABLE else None
+        self.parser = self._create_parser()
+
+    def _create_parser(self) -> argparse.ArgumentParser:
+        """创建命令行参数解析器"""
+        parser = argparse.ArgumentParser(
+            prog="super-dev",
+            description=__description__,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
+示例:
+  super-dev init my-project        初始化新项目
+  super-dev analyze [path]         分析现有项目
+  super-dev workflow               运行完整工作流
+  super-dev expert PM              调用产品经理专家
+  super-dev quality                运行质量检查
+  super-dev preview                生成原型预览
+  super-dev deploy                 生成部署配置
+            """
+        )
+
+        parser.add_argument(
+            "-v", "--version",
+            action="version",
+            version=f"%(prog)s {__version__}"
+        )
+
+        # 子命令
+        subparsers = parser.add_subparsers(
+            dest="command",
+            title="可用命令",
+            description="使用 'super-dev <command> -h' 查看帮助"
+        )
+
+        # init 命令
+        init_parser = subparsers.add_parser(
+            "init",
+            help="初始化新项目",
+            description="创建一个新的 Super Dev 项目"
+        )
+        init_parser.add_argument(
+            "name",
+            help="项目名称"
+        )
+        init_parser.add_argument(
+            "-d", "--description",
+            default="",
+            help="项目描述"
+        )
+        init_parser.add_argument(
+            "-p", "--platform",
+            choices=["web", "mobile", "wechat", "desktop"],
+            default="web",
+            help="目标平台"
+        )
+        init_parser.add_argument(
+            "-f", "--frontend",
+            choices=["react", "vue", "angular", "svelte", "none"],
+            default="react",
+            help="前端框架"
+        )
+        init_parser.add_argument(
+            "-b", "--backend",
+            choices=["node", "python", "go", "java", "none"],
+            default="node",
+            help="后端框架"
+        )
+        init_parser.add_argument(
+            "--domain",
+            choices=["", "fintech", "ecommerce", "medical", "social", "iot", "education"],
+            default="",
+            help="业务领域"
+        )
+
+        # analyze 命令
+        analyze_parser = subparsers.add_parser(
+            "analyze",
+            help="分析现有项目",
+            description="自动检测和分析现有项目的结构、技术栈和架构模式"
+        )
+        analyze_parser.add_argument(
+            "path",
+            nargs="?",
+            default=".",
+                       help="项目路径 (默认为当前目录)"
+        )
+        analyze_parser.add_argument(
+            "-o", "--output",
+            help="输出报告文件路径 (Markdown 格式)"
+        )
+        analyze_parser.add_argument(
+            "-f", "--format",
+            choices=["json", "markdown", "text"],
+            default="text",
+            help="输出格式"
+        )
+        analyze_parser.add_argument(
+            "--json",
+            action="store_true",
+            help="以 JSON 格式输出"
+        )
+
+        # workflow 命令
+        workflow_parser = subparsers.add_parser(
+            "workflow",
+            help="运行工作流",
+            description="执行 Super Dev 6 阶段工作流"
+        )
+        workflow_parser.add_argument(
+            "--phase",
+            choices=["discovery", "intelligence", "drafting", "redteam", "qa", "delivery", "deployment"],
+            nargs="*",
+            help="指定要执行的阶段"
+        )
+        workflow_parser.add_argument(
+            "-q", "--quality-gate",
+            type=int,
+            help="质量门禁阈值 (0-100)"
+        )
+
+        # expert 命令
+        expert_parser = subparsers.add_parser(
+            "expert",
+            help="调用专家",
+            description="直接调用特定专家"
+        )
+        expert_parser.add_argument(
+            "--list",
+            action="store_true",
+            help="列出所有可用专家"
+        )
+        expert_parser.add_argument(
+            "expert_name",
+            nargs="?",
+            choices=["PM", "ARCHITECT", "UI", "UX", "SECURITY", "CODE", "DBA", "QA", "DEVOPS", "RCA"],
+            help="专家名称"
+        )
+        expert_parser.add_argument(
+            "prompt",
+            nargs="*",
+            help="提示词"
+        )
+
+        # quality 命令
+        quality_parser = subparsers.add_parser(
+            "quality",
+            help="质量检查",
+            description="运行质量检查脚本"
+        )
+        quality_parser.add_argument(
+            "-t", "--type",
+            choices=["prd", "architecture", "ui", "ux", "code", "all"],
+            default="all",
+            help="检查类型"
+        )
+
+        # preview 命令
+        preview_parser = subparsers.add_parser(
+            "preview",
+            help="生成原型",
+            description="从 UI 设计生成可交互的原型"
+        )
+        preview_parser.add_argument(
+            "-o", "--output",
+            default="preview.html",
+            help="输出文件路径"
+        )
+
+        # deploy 命令
+        deploy_parser = subparsers.add_parser(
+            "deploy",
+            help="生成部署配置",
+            description="生成 Dockerfile 和 CI/CD 配置"
+        )
+        deploy_parser.add_argument(
+            "--docker",
+            action="store_true",
+            help="生成 Dockerfile"
+        )
+        deploy_parser.add_argument(
+            "--cicd",
+            choices=["github", "gitlab", "jenkins", "azure", "bitbucket"],
+            help="生成 CI/CD 配置"
+        )
+
+        # config 命令
+        config_parser = subparsers.add_parser(
+            "config",
+            help="配置管理",
+            description="查看和修改项目配置"
+        )
+        config_parser.add_argument(
+            "action",
+            choices=["get", "set", "list"],
+            help="操作"
+        )
+        config_parser.add_argument(
+            "key",
+            nargs="?",
+            help="配置键"
+        )
+        config_parser.add_argument(
+            "value",
+            nargs="?",
+            help="配置值"
+        )
+
+        # create 命令 - 一键创建项目
+        create_parser = subparsers.add_parser(
+            "create",
+            help="一键创建项目 (从想法到规范)",
+            description="从一句话描述自动生成 PRD、架构、UI/UX 文档并创建 Spec"
+        )
+        create_parser.add_argument(
+            "description",
+            help="功能描述 (如 '用户认证系统')"
+        )
+        create_parser.add_argument(
+            "-p", "--platform",
+            choices=["web", "mobile", "wechat", "desktop"],
+            default="web",
+            help="目标平台"
+        )
+        create_parser.add_argument(
+            "-f", "--frontend",
+            choices=["react", "vue", "angular", "svelte", "none"],
+            default="react",
+            help="前端框架"
+        )
+        create_parser.add_argument(
+            "-b", "--backend",
+            choices=["node", "python", "go", "java", "none"],
+            default="node",
+            help="后端框架"
+        )
+        create_parser.add_argument(
+            "-d", "--domain",
+            choices=["", "fintech", "ecommerce", "medical", "social", "iot", "education", "auth", "content"],
+            default="",
+            help="业务领域"
+        )
+        create_parser.add_argument(
+            "--name",
+            help="项目名称 (默认根据描述生成)"
+        )
+        create_parser.add_argument(
+            "--skip-docs",
+            action="store_true",
+            help="跳过文档生成，只创建 Spec"
+        )
+
+        # spec 命令 - Spec-Driven Development
+        spec_parser = subparsers.add_parser(
+            "spec",
+            help="规范驱动开发 (SDD)",
+            description="管理规范和变更提案"
+        )
+        spec_subparsers = spec_parser.add_subparsers(
+            dest="spec_action",
+            title="SDD 命令",
+            description="使用 'super-dev spec <command> -h' 查看帮助"
+        )
+
+        # spec init
+        spec_init_parser = spec_subparsers.add_parser(
+            "init",
+            help="初始化 SDD 目录结构"
+        )
+
+        # spec list
+        spec_list_parser = spec_subparsers.add_parser(
+            "list",
+            help="列出所有变更"
+        )
+        spec_list_parser.add_argument(
+            "--status",
+            choices=["draft", "proposed", "approved", "in_progress", "completed", "archived"],
+            help="按状态过滤"
+        )
+
+        # spec show
+        spec_show_parser = spec_subparsers.add_parser(
+            "show",
+            help="显示变更详情"
+        )
+        spec_show_parser.add_argument(
+            "change_id",
+            help="变更 ID"
+        )
+
+        # spec propose
+        spec_propose_parser = spec_subparsers.add_parser(
+            "propose",
+            help="创建变更提案"
+        )
+        spec_propose_parser.add_argument(
+            "change_id",
+            help="变更 ID (如 add-user-auth)"
+        )
+        spec_propose_parser.add_argument(
+            "--title",
+            required=True,
+            help="变更标题"
+        )
+        spec_propose_parser.add_argument(
+            "--description",
+            required=True,
+            help="变更描述"
+        )
+        spec_propose_parser.add_argument(
+            "--motivation",
+            help="变更动机/背景"
+        )
+        spec_propose_parser.add_argument(
+            "--impact",
+            help="影响范围"
+        )
+
+        # spec add-req
+        spec_add_req_parser = spec_subparsers.add_parser(
+            "add-req",
+            help="向变更添加需求"
+        )
+        spec_add_req_parser.add_argument(
+            "change_id",
+            help="变更 ID"
+        )
+        spec_add_req_parser.add_argument(
+            "spec_name",
+            help="规范名称 (如 auth, user-profile)"
+        )
+        spec_add_req_parser.add_argument(
+            "req_name",
+            help="需求名称"
+        )
+        spec_add_req_parser.add_argument(
+            "description",
+            help="需求描述"
+        )
+
+        # spec archive
+        spec_archive_parser = spec_subparsers.add_parser(
+            "archive",
+            help="归档已完成的变更"
+        )
+        spec_archive_parser.add_argument(
+            "change_id",
+            help="变更 ID"
+        )
+        spec_archive_parser.add_argument(
+            "-y", "--yes",
+            action="store_true",
+            help="跳过确认"
+        )
+
+        # spec validate
+        spec_validate_parser = spec_subparsers.add_parser(
+            "validate",
+            help="验证规格格式和结构"
+        )
+        spec_validate_parser.add_argument(
+            "change_id",
+            nargs="?",
+            help="变更 ID (留空则验证所有变更)"
+        )
+        spec_validate_parser.add_argument(
+            "-v", "--verbose",
+            action="store_true",
+            help="显示详细信息"
+        )
+
+        # spec view
+        spec_view_parser = spec_subparsers.add_parser(
+            "view",
+            help="交互式仪表板 - 显示所有规范和变更"
+        )
+        spec_view_parser.add_argument(
+            "--refresh",
+            action="store_true",
+            help="强制刷新数据"
+        )
+
+        # pipeline 命令 - 完整流水线
+        pipeline_parser = subparsers.add_parser(
+            "pipeline",
+            help="运行完整流水线 (从想法到部署)",
+            description="执行完整的开发流水线：文档 → Spec → 红队审查 → 质量门禁 → 代码审查指南 → CI/CD"
+        )
+        pipeline_parser.add_argument(
+            "description",
+            help="功能描述 (如 '用户认证系统')"
+        )
+        pipeline_parser.add_argument(
+            "-p", "--platform",
+            choices=["web", "mobile", "wechat", "desktop"],
+            default="web",
+            help="目标平台"
+        )
+        pipeline_parser.add_argument(
+            "-f", "--frontend",
+            choices=["react", "vue", "angular", "svelte", "none"],
+            default="react",
+            help="前端框架"
+        )
+        pipeline_parser.add_argument(
+            "-b", "--backend",
+            choices=["node", "python", "go", "java", "none"],
+            default="node",
+            help="后端框架"
+        )
+        pipeline_parser.add_argument(
+            "-d", "--domain",
+            choices=["", "fintech", "ecommerce", "medical", "social", "iot", "education", "auth", "content"],
+            default="",
+            help="业务领域"
+        )
+        pipeline_parser.add_argument(
+            "--name",
+            help="项目名称 (默认根据描述生成)"
+        )
+        pipeline_parser.add_argument(
+            "--cicd",
+            choices=["github", "gitlab", "jenkins", "azure", "bitbucket"],
+            default="github",
+            help="CI/CD 平台"
+        )
+        pipeline_parser.add_argument(
+            "--skip-redteam",
+            action="store_true",
+            help="跳过红队审查"
+        )
+        pipeline_parser.add_argument(
+            "--quality-threshold",
+            type=int,
+            default=80,
+            help="质量门禁阈值 (默认 80)"
+        )
+
+        return parser
+
+    def run(self, args: Optional[list] = None) -> int:
+        """
+        运行 CLI
+
+        Args:
+            args: 命令行参数
+
+        Returns:
+            退出码
+        """
+        parsed_args = self.parser.parse_args(args)
+
+        if parsed_args.command is None:
+            self._print_banner()
+            self.parser.print_help()
+            return 0
+
+        # 路由到对应命令
+        command_handler = getattr(self, f"_cmd_{parsed_args.command}", None)
+        if command_handler is None:
+            self.console.print(f"[red]未知命令: {parsed_args.command}[/red]")
+            return 1
+
+        try:
+            return command_handler(parsed_args)
+        except Exception as e:
+            self.console.print(f"[red]错误: {e}[/red]")
+            return 1
+
+    # ==================== 命令处理器 ====================
+
+    def _cmd_init(self, args) -> int:
+        """初始化项目"""
+        config_manager = get_config_manager()
+
+        # 检查是否已初始化
+        if config_manager.exists():
+            self.console.print("[yellow]项目已初始化，使用 'super-dev config set' 修改配置[/yellow]")
+            return 0
+
+        # 创建配置
+        config = config_manager.create(
+            name=args.name,
+            description=args.description,
+            platform=args.platform,
+            frontend=args.frontend,
+            backend=args.backend,
+            domain=args.domain
+        )
+
+        # 创建输出目录
+        output_dir = Path.cwd() / config.output_dir
+        output_dir.mkdir(exist_ok=True)
+
+        self.console.print(f"[green]✓[/green] 项目已初始化: {config.name}")
+        self.console.print(f"  平台: {config.platform}")
+        self.console.print(f"  前端: {config.frontend}")
+        self.console.print(f"  后端: {config.backend}")
+        if config.domain:
+            self.console.print(f"  领域: {config.domain}")
+
+        self.console.print(f"\n[dim]下一步:[/dim]")
+        self.console.print(f"  1. 编辑 super-dev.yaml 配置项目详情")
+        self.console.print(f"  2. 运行 'super-dev workflow' 开始开发")
+
+        return 0
+
+    def _cmd_analyze(self, args) -> int:
+        """分析现有项目"""
+        from .analyzer import ProjectAnalyzer
+
+        project_path = Path(args.path).resolve()
+
+        if not project_path.exists():
+            self.console.print(f"[red]项目不存在: {project_path}[/red]")
+            return 1
+
+        self.console.print(f"[cyan]正在分析项目: {project_path}[/cyan]")
+
+        try:
+            analyzer = ProjectAnalyzer(project_path)
+            report = analyzer.analyze()
+
+            # 根据格式输出
+            output_format = "json" if args.json else args.format
+
+            if output_format == "json":
+                import json
+                output = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+                if args.output:
+                    Path(args.output).write_text(output, encoding="utf-8")
+                    self.console.print(f"[green]报告已保存到: {args.output}[/green]")
+                else:
+                    self.console.print(output)
+
+            elif output_format == "markdown":
+                output = report.to_markdown()
+
+                if args.output:
+                    Path(args.output).write_text(output, encoding="utf-8")
+                    self.console.print(f"[green]报告已保存到: {args.output}[/green]")
+                else:
+                    self.console.print(output)
+
+            else:  # text
+                self.console.print(f"[cyan]项目分析报告[/cyan]")
+                self.console.print(f"  路径: {report.project_path}")
+                self.console.print(f"  类型: {report.category.value}")
+                self.console.print(f"  语言: {report.tech_stack.language}")
+                self.console.print(f"  框架: {report.tech_stack.framework.value}")
+                if report.tech_stack.ui_library:
+                    self.console.print(f"  UI 库: {report.tech_stack.ui_library}")
+                if report.tech_stack.state_management:
+                    self.console.print(f"  状态管理: {report.tech_stack.state_management}")
+                self.console.print(f"  文件数: {report.file_count}")
+                self.console.print(f"  代码行数: {report.total_lines:,}")
+                self.console.print(f"  依赖数: {len(report.tech_stack.dependencies)}")
+
+                if args.output:
+                    Path(args.output).write_text(report.to_markdown(), encoding="utf-8")
+                    self.console.print(f"[green]报告已保存到: {args.output}[/green]")
+
+            return 0
+
+        except Exception as e:
+            self.console.print(f"[red]分析失败: {e}[/red]")
+            import traceback
+            self.console.print(traceback.format_exc())
+            return 1
+
+    def _cmd_workflow(self, args) -> int:
+        """运行工作流"""
+        config_manager = get_config_manager()
+
+        if not config_manager.exists():
+            self.console.print("[red]未找到项目配置，请先运行 'super-dev init'[/red]")
+            return 1
+
+        # 更新质量门禁
+        if args.quality_gate is not None:
+            config_manager.update(quality_gate=args.quality_gate)
+
+        # 确定要执行的阶段
+        phases = None
+        if args.phase:
+            phase_map = {
+                "discovery": Phase.DISCOVERY,
+                "intelligence": Phase.INTELLIGENCE,
+                "drafting": Phase.DRAFTING,
+                "redteam": Phase.REDTEAM,
+                "qa": Phase.QA,
+                "delivery": Phase.DELIVERY,
+                "deployment": Phase.DEPLOYMENT,
+            }
+            phases = [phase_map[p] for p in args.phase]
+
+        # 运行工作流
+        import asyncio
+        engine = WorkflowEngine()
+        results = asyncio.run(engine.run(phases=phases))
+
+        # 检查是否全部成功
+        all_success = all(r.success for r in results.values())
+
+        return 0 if all_success else 1
+
+    def _cmd_expert(self, args) -> int:
+        """调用专家"""
+        # 处理 --list 选项
+        if args.list:
+            self.console.print("[cyan]可用专家列表:[/cyan]")
+            experts = [
+                ("PM", "产品经理 - 战略、市场契合度、优先级"),
+                ("ARCHITECT", "架构师 - 扩展性、权衡取舍、可用性"),
+                ("UI", "UI 设计师 - 设计系统、视觉打磨"),
+                ("UX", "UX 设计师 - 流程、用户心理学"),
+                ("SECURITY", "安全红队 - 渗透测试、威胁建模"),
+                ("CODE", "代码审查官 - 安全、性能优化"),
+                ("DBA", "数据架构 - 范式、索引、一致性"),
+                ("QA", "测试开发 - 自动化、质量门禁"),
+                ("DEVOPS", "基础设施 - IaC、容器化、流水线"),
+                ("RCA", "故障侦探 - 复盘、5 Whys、监控"),
+            ]
+            for code, desc in experts:
+                self.console.print(f"  [green]{code:<10}[/green] {desc}")
+            return 0
+
+        # 如果没有提供专家名称，显示帮助
+        if not args.expert_name:
+            self.console.print("[yellow]请提供专家名称或使用 --list 查看可用专家[/yellow]")
+            return 1
+
+        prompt = " ".join(args.prompt) if args.prompt else ""
+        self.console.print(f"[cyan]调用专家: {args.expert_name}[/cyan]")
+        self.console.print(f"[dim]提示词: {prompt or '(无)'}[/dim]")
+
+        # 这里会调用对应的专家
+        # 暂时只打印消息
+        self.console.print("[yellow]专家功能正在实现中...[/yellow]")
+
+        return 0
+
+    def _cmd_quality(self, args) -> int:
+        """质量检查"""
+        self.console.print(f"[cyan]运行质量检查: {args.type}[/cyan]")
+
+        # 这里会调用 quality_check.py
+        self.console.print("[yellow]质量检查功能正在实现中...[/yellow]")
+
+        return 0
+
+    def _cmd_preview(self, args) -> int:
+        """生成原型"""
+        self.console.print(f"[cyan]生成原型: {args.output}[/cyan]")
+
+        # 这里会调用 generate_preview.py
+        self.console.print("[yellow]原型生成功能正在实现中...[/yellow]")
+
+        return 0
+
+    def _cmd_deploy(self, args) -> int:
+        """生成部署配置"""
+        if args.docker:
+            self.console.print("[cyan]生成 Dockerfile...[/cyan]")
+        if args.cicd:
+            self.console.print(f"[cyan]生成 CI/CD 配置: {args.cicd}[/cyan]")
+
+        # 这里会调用 generate_dockerfile.py, generate_ci_cd.py
+        self.console.print("[yellow]部署配置功能正在实现中...[/yellow]")
+
+        return 0
+
+    def _cmd_create(self, args) -> int:
+        """一键创建项目 - 从想法到规范"""
+        from .creators import ProjectCreator
+
+        self.console.print(f"[cyan]Super Dev 项目创建器[/cyan]")
+        self.console.print(f"[dim]描述: {args.description}[/dim]")
+        self.console.print(f"[dim]平台: {args.platform} | 前端: {args.frontend} | 后端: {args.backend}[/dim]")
+        self.console.print("")
+
+        # 确定项目名称
+        project_name = args.name
+        if not project_name:
+            # 从描述生成项目名称
+            import re
+            words = re.findall(r'[\w]+', args.description)
+            if words:
+                project_name = '-'.join(words[:3]).lower()
+            else:
+                project_name = "my-project"
+
+        # 创建项目目录
+        project_dir = Path.cwd()
+
+        try:
+            creator = ProjectCreator(
+                project_dir=project_dir,
+                name=project_name,
+                description=args.description,
+                platform=args.platform,
+                frontend=args.frontend,
+                backend=args.backend,
+                domain=args.domain
+            )
+
+            # 1. 生成文档
+            if not args.skip_docs:
+                self.console.print("[cyan]第 1 步: 生成专业文档...[/cyan]")
+                docs = creator.generate_documents()
+                self.console.print(f"  [green]✓[/green] PRD: {docs['prd']}")
+                self.console.print(f"  [green]✓[/green] 架构: {docs['architecture']}")
+                self.console.print(f"  [green]✓[/green] UI/UX: {docs['uiux']}")
+                self.console.print("")
+
+            # 2. 创建 Spec
+            self.console.print("[cyan]第 2 步: 创建 Spec 规范...[/cyan]")
+            change_id = creator.create_spec()
+            self.console.print(f"  [green]✓[/green] 变更 ID: {change_id}")
+            self.console.print("")
+
+            # 3. 生成 AI 提示词
+            self.console.print("[cyan]第 3 步: 生成 AI 提示词...[/cyan]")
+            prompt_file = creator.generate_ai_prompt()
+            self.console.print(f"  [green]✓[/green] 提示词: {prompt_file}")
+            self.console.print("")
+
+            # 完成
+            self.console.print("[green]✓ 项目创建完成！[/green]")
+            self.console.print("")
+            self.console.print("[cyan]下一步:[/cyan]")
+            self.console.print(f"  1. 查看生成的文档:")
+            self.console.print(f"     - PRD: output/{project_name}-prd.md")
+            self.console.print(f"     - 架构: output/{project_name}-architecture.md")
+            self.console.print(f"     - UI/UX: output/{project_name}-uiux.md")
+            self.console.print(f"  2. 查看规范: super-dev spec show {change_id}")
+            self.console.print(f"  3. 复制 AI 提示词: cat {prompt_file}")
+            self.console.print(f"  4. 开始开发: 回复 '开始' 或运行 'super-dev spec start {change_id}'")
+
+        except Exception as e:
+            self.console.print(f"[red]创建失败: {e}[/red]")
+            import traceback
+            self.console.print(traceback.format_exc())
+            return 1
+
+        return 0
+
+    def _cmd_pipeline(self, args) -> int:
+        """运行完整流水线 - 从想法到部署"""
+        # 确定项目名称
+        project_name = args.name
+        if not project_name:
+            import re
+            words = re.findall(r'[\w]+', args.description)
+            if words:
+                project_name = '-'.join(words[:3]).lower()
+            else:
+                project_name = "my-project"
+
+        tech_stack = {
+            "platform": args.platform,
+            "frontend": args.frontend,
+            "backend": args.backend,
+            "domain": args.domain,
+        }
+
+        project_dir = Path.cwd()
+
+        self.console.print(f"[cyan]{'=' * 60}[/cyan]")
+        self.console.print(f"[cyan]Super Dev 完整流水线[/cyan]")
+        self.console.print(f"[cyan]{'=' * 60}[/cyan]")
+        self.console.print(f"[dim]项目: {project_name}[/dim]")
+        self.console.print(f"[dim]技术栈: {args.platform} | {args.frontend} | {args.backend}[/dim]")
+        self.console.print("")
+
+        try:
+            # ========== 第 1 阶段: 生成文档 ==========
+            self.console.print("[cyan]第 1 阶段: 生成专业文档...[/cyan]")
+            from .creators import DocumentGenerator
+
+            doc_generator = DocumentGenerator(
+                name=project_name,
+                description=args.description,
+                platform=args.platform,
+                frontend=args.frontend,
+                backend=args.backend,
+                domain=args.domain
+            )
+
+            # 生成文档内容
+            prd_content = doc_generator.generate_prd()
+            arch_content = doc_generator.generate_architecture()
+            uiux_content = doc_generator.generate_uiux()
+
+            # 创建输出目录并写入文件
+            output_dir = project_dir / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            prd_file = output_dir / f"{project_name}-prd.md"
+            arch_file = output_dir / f"{project_name}-architecture.md"
+            uiux_file = output_dir / f"{project_name}-uiux.md"
+
+            prd_file.write_text(prd_content, encoding="utf-8")
+            arch_file.write_text(arch_content, encoding="utf-8")
+            uiux_file.write_text(uiux_content, encoding="utf-8")
+
+            self.console.print(f"  [green]✓[/green] PRD: {prd_file}")
+            self.console.print(f"  [green]✓[/green] 架构: {arch_file}")
+            self.console.print(f"  [green]✓[/green] UI/UX: {uiux_file}")
+            self.console.print("")
+
+            # ========== 第 2 阶段: 创建 Spec ==========
+            self.console.print("[cyan]第 2 阶段: 创建 Spec 规范...[/cyan]")
+            from .creators import SpecBuilder
+
+            spec_builder = SpecBuilder(
+                project_dir=project_dir,
+                name=project_name,
+                description=args.description
+            )
+
+            requirements = doc_generator.extract_requirements()
+            change_id = spec_builder.create_change(requirements, tech_stack)
+
+            self.console.print(f"  [green]✓[/green] 变更 ID: {change_id}")
+            self.console.print(f"  [green]✓[/green] Spec: .super-dev/changes/{change_id}/")
+            self.console.print("")
+
+            # ========== 第 3 阶段: 红队审查 ==========
+            redteam_report = None
+            if not args.skip_redteam:
+                self.console.print("[cyan]第 3 阶段: 红队审查...[/cyan]")
+                from .reviewers import RedTeamReviewer
+
+                reviewer = RedTeamReviewer(
+                    project_dir=project_dir,
+                    name=project_name,
+                    tech_stack=tech_stack
+                )
+                redteam_report = reviewer.review()
+
+                # 保存红队审查报告
+                redteam_file = project_dir / "output" / f"{project_name}-redteam.md"
+                redteam_file.parent.mkdir(parents=True, exist_ok=True)
+                redteam_file.write_text(redteam_report.to_markdown(), encoding="utf-8")
+
+                self.console.print(f"  [green]✓[/green] 安全问题: {sum(1 for i in redteam_report.security_issues if i.severity in ('critical', 'high'))} high/critical")
+                self.console.print(f"  [green]✓[/green] 性能问题: {sum(1 for i in redteam_report.performance_issues if i.severity in ('critical', 'high'))} high/critical")
+                self.console.print(f"  [green]✓[/green] 架构问题: {sum(1 for i in redteam_report.architecture_issues if i.severity in ('critical', 'high'))} high/critical")
+                self.console.print(f"  [green]✓[/green] 总分: {redteam_report.total_score}/100")
+                self.console.print(f"  [green]✓[/green] 报告: {redteam_file}")
+                self.console.print("")
+            else:
+                self.console.print("[yellow]第 3 阶段: 红队审查 (跳过)[/yellow]")
+                self.console.print("")
+
+            # ========== 第 4 阶段: 质量门禁 ==========
+            self.console.print("[cyan]第 4 阶段: 质量门禁检查...[/cyan]")
+            from .reviewers import QualityGateChecker
+
+            gate_checker = QualityGateChecker(
+                project_dir=project_dir,
+                name=project_name,
+                tech_stack=tech_stack
+            )
+
+            gate_result = gate_checker.check(redteam_report)
+
+            # 保存质量门禁报告
+            gate_file = project_dir / "output" / f"{project_name}-quality-gate.md"
+            gate_file.parent.mkdir(parents=True, exist_ok=True)
+            gate_file.write_text(gate_result.to_markdown(), encoding="utf-8")
+
+            status = "[green]通过[/green]" if gate_result.passed else "[red]未通过[/red]"
+            self.console.print(f"  {status} 总分: {gate_result.total_score}/100")
+            self.console.print(f"  [green]✓[/green] 报告: {gate_file}")
+            self.console.print("")
+
+            # 质量门禁未通过，停止流水线
+            if not gate_result.passed:
+                self.console.print("[red]质量门禁未通过，流水线终止[/red]")
+                self.console.print("[cyan]请修复以下问题后重新运行:[/cyan]")
+                for failure in gate_result.critical_failures:
+                    self.console.print(f"  - {failure}")
+                return 1
+
+            # ========== 第 5 阶段: 代码审查指南 ==========
+            self.console.print("[cyan]第 5 阶段: 生成代码审查指南...[/cyan]")
+            from .reviewers import CodeReviewGenerator
+
+            review_gen = CodeReviewGenerator(
+                project_dir=project_dir,
+                name=project_name,
+                tech_stack=tech_stack
+            )
+
+            review_guide = review_gen.generate()
+            review_file = project_dir / "output" / f"{project_name}-code-review.md"
+            review_file.write_text(review_guide, encoding="utf-8")
+
+            self.console.print(f"  [green]✓[/green] 代码审查指南: {review_file}")
+            self.console.print("")
+
+            # ========== 第 6 阶段: AI 提示词 ==========
+            self.console.print("[cyan]第 6 阶段: 生成 AI 提示词...[/cyan]")
+            from .creators import AIPromptGenerator
+
+            prompt_gen = AIPromptGenerator(
+                project_dir=project_dir,
+                name=project_name
+            )
+
+            prompt_content = prompt_gen.generate()
+            prompt_file = project_dir / "output" / f"{project_name}-ai-prompt.md"
+            prompt_file.write_text(prompt_content, encoding="utf-8")
+
+            self.console.print(f"  [green]✓[/green] AI 提示词: {prompt_file}")
+            self.console.print("")
+
+            # ========== 第 7 阶段: CI/CD 配置 ==========
+            self.console.print(f"[cyan]第 7 阶段: 生成 CI/CD 配置 ({args.cicd.upper()})...[/cyan]")
+            from .deployers import CICDGenerator
+
+            cicd_gen = CICDGenerator(
+                project_dir=project_dir,
+                name=project_name,
+                tech_stack=tech_stack,
+                platform=args.cicd
+            )
+
+            cicd_files = cicd_gen.generate()
+
+            for file_path, content in cicd_files.items():
+                full_path = project_dir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_text(content, encoding="utf-8")
+                self.console.print(f"  [green]✓[/green] {file_path}")
+
+            self.console.print("")
+
+            # ========== 第 8 阶段: 数据库迁移 ==========
+            self.console.print("[cyan]第 8 阶段: 生成数据库迁移脚本...[/cyan]")
+            from .deployers import MigrationGenerator
+
+            migration_gen = MigrationGenerator(
+                project_dir=project_dir,
+                name=project_name,
+                tech_stack=tech_stack
+            )
+
+            migration_files = migration_gen.generate()
+
+            for file_path, content in migration_files.items():
+                full_path = project_dir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_text(content, encoding="utf-8")
+                self.console.print(f"  [green]✓[/green] {file_path}")
+
+            self.console.print("")
+
+            # ========== 完成 ==========
+            self.console.print(f"[cyan]{'=' * 60}[/cyan]")
+            self.console.print("[green]✓ 流水线完成！[/green]")
+            self.console.print(f"[cyan]{'=' * 60}[/cyan]")
+            self.console.print("")
+            self.console.print("[cyan]生成的文件:[/cyan]")
+            self.console.print("  文档:")
+            self.console.print(f"    - PRD: output/{project_name}-prd.md")
+            self.console.print(f"    - 架构: output/{project_name}-architecture.md")
+            self.console.print(f"    - UI/UX: output/{project_name}-uiux.md")
+            if not args.skip_redteam:
+                self.console.print(f"    - 红队审查: output/{project_name}-redteam.md")
+            self.console.print(f"    - 质量门禁: output/{project_name}-quality-gate.md")
+            self.console.print(f"    - 代码审查: output/{project_name}-code-review.md")
+            self.console.print(f"    - AI 提示词: output/{project_name}-ai-prompt.md")
+            self.console.print("")
+            self.console.print("  CI/CD:")
+            for file_path in cicd_files.keys():
+                self.console.print(f"    - {file_path}")
+            self.console.print("")
+            self.console.print("  数据库迁移:")
+            for file_path in migration_files.keys():
+                self.console.print(f"    - {file_path}")
+            self.console.print("")
+            self.console.print("[cyan]下一步:[/cyan]")
+            self.console.print("  1. 查看生成的文档和审查报告")
+            self.console.print("  2. 复制 AI 提示词给 AI 编码助手开始开发")
+            self.console.print("  3. 使用代码审查指南进行代码审查")
+            self.console.print("  4. 配置 CI/CD 平台 (设置 secrets/credentials)")
+            self.console.print("  5. 运行数据库迁移脚本")
+            self.console.print("  6. 推送代码触发 CI/CD 流水线")
+            self.console.print("")
+
+        except Exception as e:
+            self.console.print(f"[red]流水线失败: {e}[/red]")
+            import traceback
+            self.console.print(traceback.format_exc())
+            return 1
+
+        return 0
+
+    def _cmd_config(self, args) -> int:
+        """配置管理"""
+        config_manager = get_config_manager()
+
+        if not config_manager.exists():
+            self.console.print("[red]未找到项目配置[/red]")
+            return 1
+
+        if args.action == "list":
+            # 列出所有配置
+            config = config_manager.config
+            self.console.print(f"[cyan]项目配置:[/cyan]")
+            for key, value in config.__dict__.items():
+                if not key.startswith("_"):
+                    self.console.print(f"  {key}: {value}")
+
+        elif args.action == "get":
+            if not args.key:
+                self.console.print("[red]请指定配置键[/red]")
+                return 1
+            value = config_manager.get(args.key)
+            self.console.print(f"{args.key}: {value}")
+
+        elif args.action == "set":
+            if not args.key or not args.value:
+                self.console.print("[red]请指定配置键和值[/red]")
+                return 1
+            config_manager.update(**{args.key: args.value})
+            self.console.print(f"[green]✓[/green] {args.key} = {args.value}")
+
+        return 0
+
+    def _cmd_spec(self, args) -> int:
+        """Spec-Driven Development 命令"""
+        from .specs import SpecGenerator, ChangeManager, SpecManager
+        from .specs.models import ChangeStatus
+
+        project_dir = Path.cwd()
+
+        if args.spec_action == "init":
+            # 初始化 SDD 目录结构
+            generator = SpecGenerator(project_dir)
+            agents_path, project_path = generator.init_sdd()
+
+            self.console.print("[green]✓[/green] SDD 目录结构已初始化")
+            self.console.print(f"  [dim].super-dev/specs/[/dim] - 当前规范")
+            self.console.print(f"  [dim].super-dev/changes/[/dim] - 变更提案")
+            self.console.print(f"  [dim].super-dev/archive/[/dim] - 已归档变更")
+            self.console.print("")
+            self.console.print(f"[cyan]下一步:[/cyan]")
+            self.console.print(f"  1. 编辑 .super-dev/project.md 填写项目上下文")
+            self.console.print(f"  2. 运行 'super-dev spec propose <id>' 创建变更提案")
+
+        elif args.spec_action == "list":
+            # 列出所有变更
+            manager = ChangeManager(project_dir)
+            status_filter = None
+            if args.status:
+                status_filter = ChangeStatus(args.status)
+
+            changes = manager.list_changes(status=status_filter)
+
+            if not changes:
+                self.console.print("[dim]没有找到变更[/dim]")
+                return 0
+
+            self.console.print(f"[cyan]变更列表:[/cyan]")
+            for change in changes:
+                status_color = {
+                    ChangeStatus.DRAFT: "dim",
+                    ChangeStatus.PROPOSED: "yellow",
+                    ChangeStatus.APPROVED: "blue",
+                    ChangeStatus.IN_PROGRESS: "cyan",
+                    ChangeStatus.COMPLETED: "green",
+                    ChangeStatus.ARCHIVED: "dim",
+                }.get(change.status, "white")
+
+                self.console.print(
+                    f"  [{status_color}]{change.id}[/] - {change.title} "
+                    f"({change.status.value})"
+                )
+                if change.tasks:
+                    rate = change.completion_rate
+                    self.console.print(f"    [dim]进度: {rate:.0f}% ({sum(1 for t in change.tasks if t.status.value == 'completed')}/{len(change.tasks)} 任务)[/dim]")
+
+        elif args.spec_action == "show":
+            # 显示变更详情
+            manager = ChangeManager(project_dir)
+            change = manager.load_change(args.change_id)
+
+            if not change:
+                self.console.print(f"[red]变更不存在: {args.change_id}[/red]")
+                return 1
+
+            self.console.print(f"[cyan]变更详情: {change.id}[/cyan]")
+            self.console.print(f"  标题: {change.title}")
+            self.console.print(f"  状态: {change.status.value}")
+
+            if change.proposal:
+                self.console.print("")
+                self.console.print("[cyan]提案:[/cyan]")
+                if change.proposal.description:
+                    self.console.print(f"  {change.proposal.description}")
+                if change.proposal.motivation:
+                    self.console.print(f"[dim]动机: {change.proposal.motivation}[/dim]")
+
+            if change.tasks:
+                self.console.print("")
+                self.console.print("[cyan]任务:[/cyan]")
+                for task in change.tasks:
+                    checkbox = "[x]" if task.status.value == "completed" else "[ ]"
+                    self.console.print(f"  {checkbox} {task.id}: {task.title}")
+
+            if change.spec_deltas:
+                self.console.print("")
+                self.console.print("[cyan]规范变更:[/cyan]")
+                for delta in change.spec_deltas:
+                    self.console.print(f"  - {delta.spec_name} ({delta.delta_type.value})")
+
+        elif args.spec_action == "propose":
+            # 创建变更提案
+            generator = SpecGenerator(project_dir)
+            change = generator.create_change(
+                change_id=args.change_id,
+                title=args.title,
+                description=args.description,
+                motivation=args.motivation or "",
+                impact=args.impact or ""
+            )
+
+            self.console.print(f"[green]✓[/green] 变更提案已创建: {change.id}")
+            self.console.print(f"  [dim].super-dev/changes/{change.id}/[/dim]")
+            self.console.print("")
+            self.console.print(f"[cyan]下一步:[/cyan]")
+            self.console.print(f"  1. 运行 'super-dev spec add-req {change.id} <spec> <req> <desc>' 添加需求")
+            self.console.print(f"  2. 或 'super-dev spec show {change.id}' 查看详情")
+
+        elif args.spec_action == "add-req":
+            # 向变更添加需求
+            generator = SpecGenerator(project_dir)
+            delta = generator.add_requirement_to_change(
+                change_id=args.change_id,
+                spec_name=args.spec_name,
+                requirement_name=args.req_name,
+                description=args.description
+            )
+
+            self.console.print(f"[green]✓[/green] 需求已添加到变更")
+            self.console.print(f"  规范: {delta.spec_name}")
+            self.console.print(f"  需求: {args.req_name}")
+
+        elif args.spec_action == "archive":
+            # 归档变更
+            if not args.yes:
+                self.console.print(f"[yellow]即将归档变更: {args.change_id}[/yellow]")
+                self.console.print("[dim]这将把规范增量合并到主规范中[/dim]")
+                response = input("确认? (y/N): ")
+                if response.lower() != "y":
+                    self.console.print("[dim]已取消[/dim]")
+                    return 0
+
+            change_manager = ChangeManager(project_dir)
+            spec_manager = SpecManager(project_dir)
+
+            try:
+                change = change_manager.archive_change(args.change_id, spec_manager)
+                self.console.print(f"[green]✓[/green] 变更已归档: {change.id}")
+                self.console.print(f"  [dim].super-dev/archive/{change.id}/[/dim]")
+            except FileNotFoundError as e:
+                self.console.print(f"[red]{e}[/red]")
+                return 1
+            except Exception as e:
+                self.console.print(f"[red]归档失败: {e}[/red]")
+                return 1
+
+        elif args.spec_action == "validate":
+            # 验证规格格式
+            from .specs import SpecValidator
+
+            validator = SpecValidator(project_dir)
+
+            if args.change_id:
+                # 验证单个变更
+                result = validator.validate_change(args.change_id)
+                self.console.print(f"[cyan]验证变更: {args.change_id}[/cyan]")
+            else:
+                # 验证所有变更
+                result = validator.validate_all()
+                self.console.print("[cyan]验证所有变更[/cyan]")
+
+            self.console.print(result.to_summary())
+
+            if args.verbose or (not result.is_valid):
+                # 显示详细信息
+                for error in result.errors:
+                    self.console.print(
+                        f"  [red]错误[/red]: {error.message}"
+                    )
+                    if error.line > 0:
+                        self.console.print(
+                            f"    [dim]{error.file}:{error.line}[/dim]"
+                        )
+
+                for warning in result.warnings:
+                    self.console.print(
+                        f"  [yellow]警告[/yellow]: {warning.message}"
+                    )
+                    if warning.line > 0:
+                        self.console.print(
+                            f"    [dim]{warning.file}:{warning.line}[/dim]"
+                        )
+
+            return 0 if result.is_valid else 1
+
+        elif args.spec_action == "view":
+            # 交互式仪表板
+            from rich.console import Console
+            from rich.table import Table
+            from rich.panel import Panel
+            from rich.text import Text
+
+            console = Console()
+            change_manager = ChangeManager(project_dir)
+            spec_manager = SpecManager(project_dir)
+
+            # 获取所有变更和规范
+            changes = change_manager.list_changes()
+            specs = spec_manager.list_specs()
+
+            # 标题
+            title = Text.assemble(
+                ("Super Dev ", "bold cyan"),
+                ("Spec Dashboard", "bold white"),
+            )
+            console.print(Panel(title, padding=(0, 1)))
+
+            # 变更统计
+            if changes:
+                table = Table(title="活跃变更", show_header=True, header_style="bold magenta")
+                table.add_column("ID", style="cyan", width=20)
+                table.add_column("标题", style="white", width=30)
+                table.add_column("状态", style="yellow", width=12)
+                table.add_column("进度", style="green", width=10)
+                table.add_column("任务", style="blue", width=8)
+
+                for change in changes:
+                    progress = f"{change.completion_rate:.0f}%"
+                    tasks = f"{sum(1 for t in change.tasks if t.status.value == 'completed')}/{len(change.tasks)}"
+                    table.add_row(
+                        change.id,
+                        change.title or "(无标题)",
+                        change.status.value,
+                        progress,
+                        tasks
+                    )
+
+                console.print(table)
+            else:
+                console.print("[dim]没有活跃变更[/dim]")
+
+            # 规范列表
+            if specs:
+                console.print("")
+                specs_table = Table(title="当前规范", show_header=True, header_style="bold green")
+                specs_table.add_column("规范名称", style="cyan", width=30)
+                specs_table.add_column("文件路径", style="dim", width=50)
+
+                for spec_name in specs:
+                    spec_path = spec_manager.get_spec_path(spec_name)
+                    specs_table.add_row(spec_name, str(spec_path.relative_to(project_dir)))
+
+                console.print(specs_table)
+
+            # 统计信息
+            console.print("")
+            stats_table = Table(show_header=False, box=None)
+            stats_table.add_column("指标", style="bold white")
+            stats_table.add_column("数量", style="cyan")
+
+            stats_table.add_row("活跃变更", str(len(changes)))
+            stats_table.add_row("规范文件", str(len(specs)))
+            stats_table.add_row("待处理任务", str(sum(1 for c in changes for t in c.tasks if t.status.value == "pending")))
+
+            console.print(stats_table)
+
+            return 0
+
+        else:
+            self.console.print("[yellow]请指定 SDD 命令[/yellow]")
+            return 1
+
+        return 0
+
+    # ==================== 辅助方法 ====================
+
+    def _print_banner(self) -> None:
+        """打印欢迎横幅"""
+        if self.console:
+            banner = Text()
+            banner.append("Super Dev ", style="bold cyan")
+            banner.append(f"v{__version__}\n", style="dim")
+            banner.append(__description__, style="white")
+
+            self.console.print(Panel.fit(
+                banner,
+                title="Super Dev",
+                border_style="cyan"
+            ))
+
+
+def main() -> int:
+    """主入口"""
+    cli = SuperDevCLI()
+    return cli.run()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,28 @@
+author: ''
+backend: node
+cli: {}
+database: postgresql
+description: ''
+domain: ''
+experts:
+- PM
+- ARCHITECT
+- UI
+- UX
+- SECURITY
+- CODE
+frontend: react
+license: MIT
+name: test-project
+output_dir: output
+phases:
+- discovery
+- intelligence
+- drafting
+- redteam
+- qa
+- delivery
+- deployment
+platform: web
+quality_gate: 90
+version: 1.0.0
