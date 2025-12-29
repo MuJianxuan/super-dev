@@ -13,7 +13,6 @@
 [![Tests](https://img.shields.io/badge/tests-59%20passing-brightgreen)](tests/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success)](.github/workflows/ci.yml)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://code.claude.com)
-[![PyPI](https://img.shields.io/badge/PyPI-1.0.0-orange)](https://pypi.org/project/super-dev/)
 
 English | [简体中文](README.md)
 
@@ -192,12 +191,11 @@ Super Dev includes an OpenSpec-like spec-driven development workflow:
 ### Installation
 
 ```bash
-# Install with pip
-pip install super-dev
-
-# Or install from source
+# Clone from GitHub
 git clone https://github.com/shangyankeji/super-dev.git
 cd super-dev
+
+# Install dependencies
 pip install -e .
 ```
 

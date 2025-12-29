@@ -13,7 +13,6 @@
 [![Tests](https://img.shields.io/badge/tests-59%20passing-brightgreen)](tests/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success)](.github/workflows/ci.yml)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://code.claude.com)
-[![PyPI](https://img.shields.io/badge/PyPI-1.0.0-orange)](https://pypi.org/project/super-dev/)
 
 [English](README_EN.md) | 简体中文
 
@@ -192,12 +191,11 @@ Super Dev 内置了类似 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的
 ### 安装
 
 ```bash
-# 使用 pip 安装
-pip install super-dev
-
-# 或从源码安装
+# 从 GitHub 克隆源码
 git clone https://github.com/shangyankeji/super-dev.git
 cd super-dev
+
+# 安装依赖
 pip install -e .
 ```
 
