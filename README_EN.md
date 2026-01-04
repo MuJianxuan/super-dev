@@ -16,7 +16,7 @@
 
 English | [简体中文](README.md)
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Complete Tutorial](#-complete-tutorial) • [Command Reference](#-command-reference) • [Documentation](#--documentation) • [Examples](#-examples)
+[Features](#-features) • [Quick Start](#-quick-start) • [AI Tool Integration](#-ai-tool-integration) • [Complete Tutorial](#-complete-tutorial) • [Command Reference](#-command-reference) • [Documentation](#--documentation) • [Examples](#-examples)
 
 </div>
 
@@ -277,6 +277,78 @@ super-dev workflow
 # Use in Claude Code
 Just tell Claude: "Help me analyze this project with Super Dev"
 ```
+
+---
+
+## AI Tool Integration
+
+### 🤖 Compatible with All Major AI IDEs and CLI Tools
+
+**Super Dev** is not a plugin for a specific platform, but a **universal AI-assisted development tool**. The generated documents and prompts work with any AI tool.
+
+#### Supported AI Tools
+
+**AI IDEs** (Recommended):
+- **Cursor** ⭐⭐⭐⭐⭐ - Most popular AI IDE with Claude 3.5 Sonnet
+- **Windsurf** ⭐⭐⭐⭐⭐ - By Codeium, completely free
+- **Claude Code** ⭐⭐⭐⭐⭐ - Deep Skill integration
+- **Continue** ⭐⭐⭐⭐ - Open-source VS Code extension
+- **Tabby** ⭐⭐⭐⭐ - Open-source self-hosted AI IDE
+
+**AI CLI Tools**:
+- **Aider** ⭐⭐⭐⭐⭐ - Command-line AI programming assistant
+- **OpenAI Codex** ⭐⭐⭐⭐ - OpenAI CLI
+- **GPT-cli** ⭐⭐⭐ - GPT command-line tool
+
+**Web AI Platforms**:
+- **ChatGPT / GPT-4** ⭐⭐⭐⭐⭐
+- **Claude (Web)** ⭐⭐⭐⭐⭐
+- **DeepSeek** ⭐⭐⭐⭐
+- **Perplexity** ⭐⭐⭐
+
+**Code Assistants**:
+- **GitHub Copilot** ⭐⭐⭐⭐
+- **Codeium** ⭐⭐⭐⭐
+- **Sourcegraph Cody** ⭐⭐⭐⭐
+
+#### Usage
+
+```bash
+# Step 1: Generate project assets with Super Dev
+super-dev pipeline "User authentication system" \
+  --platform web \
+  --frontend react \
+  --backend node
+
+# Step 2: View the generated AI prompt
+cat output/*-ai-prompt.md
+
+# Step 3: Copy prompt to any AI tool
+
+# Cursor Example:
+# 1. Press Cmd+I to open Composer
+# 2. Paste the prompt
+# 3. Click Generate
+
+# ChatGPT Example:
+# 1. Open chatgpt.com
+# 2. Paste the prompt
+# 3. GPT-4 generates code
+
+# Aider Example:
+# aider --prompt "$(cat output/*-ai-prompt.md)"
+```
+
+#### Detailed Integration Guide
+
+**📚 [Complete AI Tool Integration Guide →](docs/INTEGRATION_GUIDE.md)**
+
+Includes:
+- Cursor, Windsurf, Continue detailed configuration
+- Aider, ChatGPT, Claude Web usage
+- `.cursorrules`, `.windsurfrules` templates
+- Team collaboration best practices
+- FAQ
 
 ---
 
