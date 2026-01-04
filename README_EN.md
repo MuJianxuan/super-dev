@@ -203,25 +203,114 @@ Super Dev includes an OpenSpec-like spec-driven development workflow:
 
 ## Quick Start
 
-### Installation
+> 🚀 **Get started in 5 minutes!** Check out [**Detailed Quick Start Guide**](docs/QUICKSTART.md) | 🎯 **Not sure where to start?** Begin with [From 0 to 1](#-from-0-to-1new-project)
+
+### Choose Your Use Case
+
+| Scenario | Description | Is this for you? |
+|:---|:---|:---|
+| **From 0 to 1** | New project, from idea to complete code | ✅ New product/feature<br/>✅ Learn Super Dev<br/>✅ Complete experience |
+| **From 1 to N+1** | Existing project, add new features | ✅ Maintain existing project<br/>✅ Feature expansion<br/>✅ Team collaboration |
+
+**👆 Not sure? Start with From 0 to 1!**
+
+### Installation (3 Steps)
 
 ```bash
-# Clone from GitHub
-git clone https://github.com/shangyankeji/super-dev.git
-cd super-dev
+# 1. Install Super Dev
+pip install super-dev
 
-# Install dependencies
-pip install -e .
+# 2. Verify installation
+super-dev --version
+
+# 3. Done!
 ```
 
-### Requirements
-
-- Python 3.10+
-- Modern terminal (with ANSI color support)
+**Expected output:**
+```
+Super Dev v1.0.1
+```
 
 ### Core Usage: From Idea to Deployment
 
-#### Method 1: Complete Pipeline (Recommended)
+---
+
+#### 🌱 From 0 to 1 (New Project)
+
+**Use case**: New product, new feature, standalone project
+
+**Step 1: Generate project documents**
+
+```bash
+super-dev create "User Authentication System" \
+  --platform web \
+  --frontend react \
+  --backend node
+```
+
+**Step 2: Implement in Claude Code**
+
+Open Claude Code and say:
+
+```
+I used Super Dev to generate project documents in the output/ directory.
+Please read all documents and help me implement the code.
+```
+
+**It's that simple!** Claude will:
+- ✅ Analyze project requirements (PRD)
+- ✅ Design system architecture
+- ✅ Implement UI interface
+- ✅ Write backend API
+- ✅ Configure database
+- ✅ Write tests
+
+**👉 [View detailed tutorial](docs/QUICKSTART.md#-scenario-1from-0-to-1new-project)**
+
+---
+
+#### 🔄 From 1 to N+1 (Existing Project)
+
+**Use case**: Maintain existing project, feature expansion, team collaboration
+
+**Step 1: Enter project directory**
+
+```bash
+cd /path/to/your/existing-project
+```
+
+**Step 2: Generate new feature documents**
+
+```bash
+super-dev create "Add user profile editing feature" \
+  --platform web \
+  --frontend react \
+  --backend node
+```
+
+**Step 3: Integrate in Claude Code**
+
+Open Claude Code and say:
+
+```
+I used Super Dev to generate new feature documents for an existing project in the output/ directory.
+Please read the existing project code and new feature documents, and help me integrate this new feature.
+```
+
+**Claude will**:
+- ✅ Analyze existing project structure
+- ✅ Understand new feature requirements
+- ✅ Integrate new feature into existing code
+- ✅ Keep code style consistent
+- ✅ Run tests to ensure no breaking changes
+
+**👉 [View detailed tutorial](docs/QUICKSTART.md#-scenario-2from-1-to-n1existing-project)**
+
+---
+
+### Other Usage Methods
+
+#### Complete Pipeline (8 Stages)
 
 ```bash
 # One sentence → Complete project assets (8 stages)
@@ -244,30 +333,9 @@ output/
 ├── User Authentication System-code-review.md  # Code review guide
 ├── User Authentication System-ai-prompt.md    # AI prompts
 └── ...
-.super-dev/changes/User Authentication System/
-├── proposal.md                                # Change proposal
-├── tasks.md                                   # Task checklist
-└── specs/                                     # Spec definitions
-.github/workflows/
-├── ci.yml                                     # CI configuration
-└── cd.yml                                     # CD configuration
-prisma/
-├── schema.prisma                              # Database schema
-└── migrations/                                # Migration scripts
 ```
 
-#### Method 2: One-Click Project Creation
-
-```bash
-# Generate docs + Spec + AI prompts
-super-dev create "User Authentication System" \
-  --platform web \
-  --frontend react \
-  --backend node \
-  --domain auth
-```
-
-#### Method 3: Step-by-Step Creation
+#### Step-by-Step Creation
 
 ```bash
 # 1. Initialize project
@@ -283,7 +351,9 @@ vim super-dev.yaml
 super-dev workflow
 ```
 
-### Claude Code Skill Integration
+---
+
+## AI Tool Integration
 
 ```bash
 # Install to Claude Code
