@@ -9,7 +9,7 @@
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from .document_generator import DocumentGenerator
@@ -26,9 +26,13 @@ class ProjectCreator:
         name: str,
         description: str,
         platform: str = "web",
-        frontend: str = "react",
+        frontend: str = "next",
         backend: str = "node",
-        domain: str = ""
+        domain: str = "",
+        ui_library: Optional[str] = None,
+        style_solution: Optional[str] = None,
+        state_management: List[str] = None,
+        testing_frameworks: List[str] = None,
     ):
         """初始化项目创建器"""
         self.project_dir = Path(project_dir).resolve()
@@ -38,6 +42,10 @@ class ProjectCreator:
         self.frontend = frontend
         self.backend = backend
         self.domain = domain
+        self.ui_library = ui_library
+        self.style_solution = style_solution
+        self.state_management = state_management or []
+        self.testing_frameworks = testing_frameworks or []
 
         # 确保输出目录存在
         self.output_dir = self.project_dir / "output"
@@ -50,7 +58,11 @@ class ProjectCreator:
             platform=platform,
             frontend=frontend,
             backend=backend,
-            domain=domain
+            domain=domain,
+            ui_library=ui_library,
+            style_solution=style_solution,
+            state_management=state_management,
+            testing_frameworks=testing_frameworks,
         )
         self.spec_builder = SpecBuilder(
             project_dir=self.project_dir,

@@ -24,7 +24,7 @@ class TestCLIInit:
             result = cli.run([
                 "init", "test-project",
                 "-p", "web",
-                "-f", "react",
+                "-f", "next",
                 "-b", "node"
             ])
 

@@ -86,9 +86,44 @@ class SuperDevCLI:
         )
         init_parser.add_argument(
             "-f", "--frontend",
-            choices=["react", "vue", "angular", "svelte", "none"],
-            default="react",
+            choices=[
+                "next", "remix", "react-vite", "gatsby",
+                "nuxt", "vue-vite",
+                "angular",
+                "sveltekit",
+                "astro", "solid", "qwik",
+                "none"
+            ],
+            default="next",
             help="前端框架"
+        )
+        init_parser.add_argument(
+            "--ui-library",
+            choices=[
+                "mui", "ant-design", "chakra-ui", "mantine", "shadcn-ui", "radix-ui",
+                "element-plus", "naive-ui", "vuetify", "primevue", "arco-design",
+                "angular-material", "primeng",
+                "skeleton-ui", "svelte-material-ui",
+                "tailwind", "daisyui"
+            ],
+            help="UI 组件库"
+        )
+        init_parser.add_argument(
+            "--style",
+            choices=["tailwind", "css-modules", "styled-components", "emotion", "scss", "less", "unocss"],
+            help="样式方案"
+        )
+        init_parser.add_argument(
+            "--state",
+            choices=["react-query", "swr", "zustand", "redux-toolkit", "jotai", "pinia", "xstate"],
+            action="append",
+            help="状态管理方案 (可多选)"
+        )
+        init_parser.add_argument(
+            "--testing",
+            choices=["vitest", "jest", "playwright", "cypress", "testing-library"],
+            action="append",
+            help="测试框架 (可多选)"
         )
         init_parser.add_argument(
             "-b", "--backend",
@@ -278,6 +313,105 @@ class SuperDevCLI:
             "--skip-docs",
             action="store_true",
             help="跳过文档生成，只创建 Spec"
+        )
+
+        # design 命令 - 设计智能引擎
+        design_parser = subparsers.add_parser(
+            "design",
+            help="设计智能引擎 - 超越 UI UX Pro Max",
+            description="搜索设计资产、生成设计系统、创建 design tokens"
+        )
+        design_subparsers = design_parser.add_subparsers(
+            dest="design_command",
+            title="设计命令",
+            description="使用 'super-dev design <command> -h' 查看帮助"
+        )
+
+        # design search
+        design_search_parser = design_subparsers.add_parser(
+            "search",
+            help="搜索设计资产",
+            description="搜索 UI 风格、配色、字体、组件等设计资产"
+        )
+        design_search_parser.add_argument(
+            "query",
+            help="搜索关键词"
+        )
+        design_search_parser.add_argument(
+            "-d", "--domain",
+            choices=["style", "color", "typography", "component", "layout", "animation", "ux", "chart", "product"],
+            help="搜索领域 (默认自动检测)"
+        )
+        design_search_parser.add_argument(
+            "-n", "--max-results",
+            type=int,
+            default=5,
+            help="最大结果数 (默认: 5)"
+        )
+
+        # design generate
+        design_generate_parser = design_subparsers.add_parser(
+            "generate",
+            help="生成完整设计系统",
+            description="基于产品类型和行业生成完整的设计系统"
+        )
+        design_generate_parser.add_argument(
+            "--product",
+            required=True,
+            help="产品类型 (SaaS, E-commerce, Portfolio, Dashboard)"
+        )
+        design_generate_parser.add_argument(
+            "--industry",
+            required=True,
+            help="行业 (Fintech, Healthcare, Education, Gaming)"
+        )
+        design_generate_parser.add_argument(
+            "--keywords",
+            nargs="+",
+            help="关键词列表"
+        )
+        design_generate_parser.add_argument(
+            "-p", "--platform",
+            choices=["web", "mobile", "desktop"],
+            default="web",
+            help="目标平台 (默认: web)"
+        )
+        design_generate_parser.add_argument(
+            "-a", "--aesthetic",
+            help="美学方向 (可选)"
+        )
+        design_generate_parser.add_argument(
+            "-o", "--output",
+            default="output/design",
+            help="输出目录 (默认: output/design)"
+        )
+
+        # design tokens
+        design_tokens_parser = design_subparsers.add_parser(
+            "tokens",
+            help="生成 design tokens",
+            description="生成 CSS 变量、Tailwind 配置等 design tokens"
+        )
+        design_tokens_parser.add_argument(
+            "--primary",
+            required=True,
+            help="主色 (hex 值，如 #3B82F6)"
+        )
+        design_tokens_parser.add_argument(
+            "--type",
+            choices=["monochromatic", "analogous", "complementary", "triadic"],
+            default="monochromatic",
+            help="调色板类型 (默认: monochromatic)"
+        )
+        design_tokens_parser.add_argument(
+            "--format",
+            choices=["css", "json", "tailwind"],
+            default="css",
+            help="输出格式 (默认: css)"
+        )
+        design_tokens_parser.add_argument(
+            "-o", "--output",
+            help="输出文件路径"
         )
 
         # spec 命令 - Spec-Driven Development
@@ -516,7 +650,11 @@ class SuperDevCLI:
             platform=args.platform,
             frontend=args.frontend,
             backend=args.backend,
-            domain=args.domain
+            domain=args.domain,
+            ui_library=getattr(args, 'ui_library', None),
+            style_solution=getattr(args, 'style', None),
+            state_management=getattr(args, 'state', []) or [],
+            testing_frameworks=getattr(args, 'testing', []) or [],
         )
 
         # 创建输出目录
@@ -525,7 +663,15 @@ class SuperDevCLI:
 
         self.console.print(f"[green]✓[/green] 项目已初始化: {config.name}")
         self.console.print(f"  平台: {config.platform}")
-        self.console.print(f"  前端: {config.frontend}")
+        self.console.print(f"  前端框架: {config.frontend}")
+        if config.ui_library:
+            self.console.print(f"  UI 组件库: {config.ui_library}")
+        if config.style_solution:
+            self.console.print(f"  样式方案: {config.style_solution}")
+        if config.state_management:
+            self.console.print(f"  状态管理: {', '.join(config.state_management)}")
+        if config.testing_frameworks:
+            self.console.print(f"  测试框架: {', '.join(config.testing_frameworks)}")
         self.console.print(f"  后端: {config.backend}")
         if config.domain:
             self.console.print(f"  领域: {config.domain}")
@@ -733,7 +879,11 @@ class SuperDevCLI:
                 platform=args.platform,
                 frontend=args.frontend,
                 backend=args.backend,
-                domain=args.domain
+                domain=args.domain,
+                ui_library=getattr(args, 'ui_library', None),
+                style_solution=getattr(args, 'style', None),
+                state_management=getattr(args, 'state', []) or [],
+                testing_frameworks=getattr(args, 'testing', []) or [],
             )
 
             # 1. 生成文档
@@ -776,6 +926,185 @@ class SuperDevCLI:
             return 1
 
         return 0
+
+    def _cmd_design(self, args) -> int:
+        """设计智能引擎命令"""
+        from .design import DesignIntelligenceEngine, DesignSystemGenerator, TokenGenerator
+
+        if args.design_command == "search":
+            # 搜索设计资产
+            self.console.print(f"[cyan]搜索设计资产: {args.query}[/cyan]")
+
+            engine = DesignIntelligenceEngine()
+
+            result = engine.search(
+                query=args.query,
+                domain=args.domain,
+                max_results=args.max_results,
+            )
+
+            # 显示结果
+            if "error" in result:
+                self.console.print(f"[red]搜索失败: {result['error']}[/red]")
+                return 1
+
+            domain_name = {
+                "style": "风格",
+                "color": "配色",
+                "typography": "字体",
+                "component": "组件",
+                "layout": "布局",
+                "animation": "动画",
+                "ux": "UX 指南",
+                "chart": "图表",
+                "product": "产品",
+            }.get(result["domain"], result["domain"])
+
+            self.console.print(f"\n[green]找到 {result['count']} 个{domain_name}结果:[/green]\n")
+
+            for idx, item in enumerate(result["results"], 1):
+                relevance_color = {
+                    "high": "green",
+                    "medium": "yellow",
+                    "low": "dim",
+                }.get(item.get("relevance", "low"), "dim")
+
+                self.console.print(f"[{relevance_color}]{idx}.[/] [bold]{item.get('name', item.get('Style Category', item.get('Font Pairing Name', 'N/A')))}[/] (相关度: {item.get('relevance', 'N/A')})")
+
+                # 显示关键信息
+                if "description" in item:
+                    self.console.print(f"    {item['description']}")
+                if "keywords" in item:
+                    self.console.print(f"    关键词: {item['keywords']}")
+                if "primary_colors" in item:
+                    self.console.print(f"    色彩: {item['primary_colors']}")
+                if "mood" in item:
+                    self.console.print(f"    风格: {item['mood']}")
+
+                self.console.print()
+
+            return 0
+
+        elif args.design_command == "generate":
+            # 生成完整设计系统
+            self.console.print(f"[cyan]生成设计系统[/cyan]")
+            self.console.print(f"  产品: {args.product}")
+            self.console.print(f"  行业: {args.industry}")
+            self.console.print(f"  关键词: {' '.join(args.keywords) if args.keywords else 'N/A'}")
+            self.console.print(f"  平台: {args.platform}")
+            self.console.print()
+
+            generator = DesignSystemGenerator()
+
+            design_system = generator.generate(
+                product_type=args.product,
+                industry=args.industry,
+                keywords=args.keywords or [],
+                platform=args.platform,
+                aesthetic=args.aesthetic,
+            )
+
+            self.console.print(f"[green]设计系统已生成:[/green]\n")
+            self.console.print(f"  名称: {design_system.name}")
+            self.console.print(f"  描述: {design_system.description}")
+
+            if design_system.aesthetic:
+                self.console.print(f"  美学方向: {design_system.aesthetic.name}")
+                self.console.print(f"  差异化特征: {design_system.aesthetic.differentiation}")
+
+            self.console.print(f"\n[cyan]生成文件...[/cyan]")
+
+            output_dir = Path(args.output)
+            generated_files = generator.generate_documentation(design_system, output_dir)
+
+            for file_path in generated_files:
+                self.console.print(f"  [green]✓[/green] {file_path}")
+
+            self.console.print(f"\n[dim]下一步:[/dim]")
+            self.console.print(f"  1. 查看 {output_dir / 'DESIGN_SYSTEM.md'} 了解设计系统")
+            self.console.print(f"  2. 使用 {output_dir / 'design-tokens.css'} 导入 CSS 变量")
+            self.console.print(f"  3. 使用 {output_dir / 'tailwind.config.json'} 配置 Tailwind")
+
+            return 0
+
+        elif args.design_command == "tokens":
+            # 生成 design tokens
+            self.console.print(f"[cyan]生成 design tokens[/cyan]")
+            self.console.print(f"  主色: {args.primary}")
+            self.console.print(f"  类型: {args.type}")
+            self.console.print()
+
+            token_gen = TokenGenerator()
+
+            if args.format == "css":
+                tokens = token_gen.generate_all_tokens(args.primary, args.type)
+
+                css_content = [":root {"]
+                css_content.append("  /* Colors */")
+
+                for name, value in tokens["colors"].items():
+                    css_content.append(f"  --color-{name}: {value};")
+
+                css_content.append("")
+                css_content.append("  /* Spacing */")
+
+                for name, value in tokens["spacing"].items():
+                    css_content.append(f"  --space-{name}: {value};")
+
+                css_content.append("")
+                css_content.append("  /* Shadows */")
+
+                for name, value in tokens["shadows"].items():
+                    css_content.append(f"  --shadow-{name}: {value};")
+
+                css_content.append("}")
+
+                output = "\n".join(css_content)
+
+                if args.output:
+                    Path(args.output).write_text(output, encoding="utf-8")
+                    self.console.print(f"[green]✓[/green] 已保存到 {args.output}")
+                else:
+                    self.console.print(output)
+
+            elif args.format == "json":
+                tokens = token_gen.generate_all_tokens(args.primary, args.type)
+                output = json.dumps(tokens, indent=2)
+
+                if args.output:
+                    Path(args.output).write_text(output, encoding="utf-8")
+                    self.console.print(f"[green]✓[/green] 已保存到 {args.output}")
+                else:
+                    self.console.print(output)
+
+            elif args.format == "tailwind":
+                tokens = token_gen.generate_all_tokens(args.primary, args.type)
+
+                tailwind_config = {
+                    "theme": {
+                        "extend": {
+                            "colors": {f"{k}": v for k, v in tokens["colors"].items()},
+                            "spacing": tokens["spacing"],
+                            "boxShadow": tokens["shadows"],
+                        }
+                    }
+                }
+
+                output = json.dumps(tailwind_config, indent=2)
+
+                if args.output:
+                    Path(args.output).write_text(output, encoding="utf-8")
+                    self.console.print(f"[green]✓[/green] 已保存到 {args.output}")
+                else:
+                    self.console.print(output)
+
+            return 0
+
+        else:
+            self.console.print("[yellow]请指定设计子命令[/yellow]")
+            self.console.print("  可用命令: search, generate, tokens")
+            self.console.print("  使用 'super-dev design <command> -h' 查看帮助")
+            return 1
 
     def _cmd_pipeline(self, args) -> int:
         """运行完整流水线 - 从想法到部署"""

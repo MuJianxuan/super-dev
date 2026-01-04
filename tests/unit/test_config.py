@@ -19,7 +19,7 @@ class TestProjectConfig:
 
         assert config.name == "test"
         assert config.platform == "web"
-        assert config.frontend == "react"
+        assert config.frontend == "next"
         assert config.backend == "node"
         assert config.quality_gate == 80
 

@@ -37,6 +37,7 @@
 | **规范驱动开发** | 类似 OpenSpec 的工作流，在编码前达成规范共识 |
 | **8 阶段流水线** | 文档 → Spec → 红队审查 → 质量门禁 → 代码审查 → AI 提示 → CI/CD → 数据库迁移 |
 | **10 位专家系统** | PM/架构/UI/UX/安全/代码/DBA/QA/DevOps/RCA 协作 |
+| **设计智能引擎** | 超越 UI UX Pro Max：100+ UI 风格、150+ 配色、80+ 字体组合、BM25+ 语义搜索 |
 | **知识库注入** | 6 个业务领域 + 4 个平台的专业知识自动注入 |
 | **质量门禁** | 80+ 分质量标准，确保交付物达到商业级 |
 | **开箱即用** | CLI 工具，一键生成完整项目资产 |
@@ -71,6 +72,12 @@ Super Dev 提供从想法到部署的 8 阶段自动化流水线：
 super-dev pipeline "功能描述"    # 运行完整 8 阶段流水线
 super-dev create "功能描述"      # 一键创建项目 (文档 + Spec + AI 提示)
 super-dev spec <subcommand>      # Spec-Driven Development 管理
+super-dev design <subcommand>    # 设计智能引擎 (超越 UI UX Pro Max)
+
+# ===== 设计智能 =====
+super-dev design search "glass"       # 搜索设计资产
+super-dev design generate --product SaaS --industry Fintech  # 生成完整设计系统
+super-dev design tokens --primary #3B82F6  # 生成 design tokens
 
 # ===== 项目管理 =====
 super-dev init <name>            # 初始化新项目
@@ -183,6 +190,119 @@ Super Dev 内置了类似 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的
 
 #### CI/CD 平台
 - GitHub Actions, GitLab CI, Jenkins, Azure DevOps, Bitbucket Pipelines
+
+### 7. 设计智能引擎 (超越 UI UX Pro Max)
+
+Super Dev 内置强大的设计智能引擎，提供从设计搜索到完整设计系统生成的端到端能力：
+
+#### 核心能力
+
+| 能力 | 说明 |
+|:---|:-----|
+| **BM25+ 语义搜索** | 增强版 BM25 算法，支持字段权重、短语匹配、IDF 平滑、模糊搜索 |
+| **多域搜索** | style, color, typography, component, layout, animation, ux, chart, product, stack |
+| **美学方向生成** | 26+ 种独特美学方向（cyberpunk, brutalist_minimal, vaporwave, etc.） |
+| **Design Tokens** | 自动生成色彩、间距、阴影、圆角等设计令牌 |
+| **设计系统生成** | 完整设计系统（CSS 变量、Tailwind 配置、设计文档） |
+| **AI 驱动推荐** | 基于产品类型、行业、关键词智能推荐设计系统 |
+
+#### 设计资产库
+
+```
+100+ UI 风格    # Glassmorphism, Neumorphism, Brutalism, Bento Grid, etc.
+150+ 配色方案   # 预设调色板 + 自动生成单色/类比/互补/三色配色
+80+ 字体组合    # Display + Body + Accent + Mono 组合
+200+ 组件库     # Button, Input, Card, Navigation, etc.
+50+ 布局模式    # Grid, Masonry, Bento, Split Screen, etc.
+60+ 动画效果    # Easing, Stagger, Parallax, Morphing, etc.
+```
+
+#### 美学方向 (26+ 种)
+
+```
+极简方向: brutalist_minimal, japanese_zen, scandinavian, swiss_international
+极繁方向: maximalist_chaos, memphis_group, pop_art, vaporwave
+复古未来: retro_futurism, cyberpunk, art_deco, steampunk
+自然有机: organic_natural, biophilic, earthy, botanical
+奢华精致: luxury_refined, french_elegance, italian_sophistication, artisanal
+俏皮趣味: playful_toy, kawaii, whimsical, neon_pop
+编辑杂志: editorial_magazine, typography_centric, grid_breaking
+原始工业: raw_industrial, utilitarian, grunge, post_apocalyptic
+柔和梦幻: soft_pastel, dreamy, ethereal, glass_morphism
+```
+
+#### 使用示例
+
+```bash
+# 搜索设计资产（支持多域搜索）
+super-dev design search "glass" --domain style -n 5
+super-dev design search "blue" --domain color -n 10
+super-dev design search "minimal" --domain layout -n 3
+
+# 生成完整设计系统
+super-dev design generate \
+  --product SaaS \
+  --industry Fintech \
+  --keywords "professional,trust,secure" \
+  --platform web
+
+# 生成 design tokens
+super-dev design tokens \
+  --primary #3B82F6 \
+  --type monochromatic \
+  --format css
+```
+
+#### 输出示例
+
+**设计系统生成** (CSS 变量):
+```css
+:root {
+  /* Colors */
+  --color-primary: #3B82F6;
+  --color-secondary: #1E40AF;
+  --color-accent: #F59E0B;
+  --color-background: #FFFFFF;
+  --color-surface: #F9FAFB;
+  --color-text: #111827;
+  --color-text-secondary: #6B7280;
+
+  /* Typography */
+  --font-display: 'Space Grotesk';
+  --font-body: 'Plus Jakarta Sans';
+
+  /* Spacing (8pt grid) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+}
+```
+
+**Tailwind 配置**:
+```json
+{
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#3B82F6",
+        "secondary": "#1E40AF",
+        "accent": "#F59E0B"
+      },
+      "fontFamily": {
+        "display": ["Space Grotesk", "sans-serif"],
+        "body": ["Plus Jakarta Sans", "sans-serif"]
+      }
+    }
+  }
+}
+```
 
 ---
 
@@ -351,6 +471,117 @@ super-dev spec view                  # 显示所有规范和变更的仪表板
 super-dev spec archive <change-id>
 ```
 
+### design - 设计智能引擎
+
+```bash
+# ===== 搜索设计资产 =====
+super-dev design search "查询词" [选项]
+
+选项:
+  -d, --domain {style,color,typography,component,layout,animation,ux,chart,product,stack}
+                        搜索域 (默认: 自动检测)
+  -n, --max-results N   最大结果数 (默认: 5)
+  --fuzzy               启用模糊匹配
+  --format {table,json,detailed}
+                        输出格式 (默认: table)
+
+示例:
+  super-dev design search "glass"              # 搜索 glassmorphism 风格
+  super-dev design search "blue" --domain color # 搜索蓝色配色
+  super-dev design search "minimal" -n 10       # 获取 10 个结果
+
+# ===== 生成完整设计系统 =====
+super-dev design generate [选项]
+
+选项:
+  --product {SaaS,Mobile,E-commerce,Dashboard,Portfolio,Landing,Blog,Marketplace}
+                        产品类型 (必需)
+  --industry {Fintech,Healthcare,Education,E-commerce,Social,Media,Travel,RealEstate}
+                        行业领域 (必需)
+  --keywords KEYWORDS   关键词 (逗号分隔)
+  --platform {web,mobile,wechat,desktop}
+                        目标平台 (默认: web)
+  --aesthetic AESTHETIC 美学方向 (见下方列表)
+  -o, --output DIR      输出目录 (默认: ./design-system)
+
+示例:
+  super-dev design generate --product SaaS --industry Fintech
+  super-dev design generate --product E-commerce --industry Retail --keywords "vibrant,energetic"
+  super-dev design generate --product Dashboard --industry Healthcare --aesthetic brutalist_minimal
+
+# ===== 生成 Design Tokens =====
+super-dev design tokens [选项]
+
+选项:
+  --primary COLOR       主色调 (必需，格式: #RRGGBB)
+  --type {monochromatic,analogous,complementary,triadic,split_complementary,tetradic}
+                        配色类型 (默认: monochromatic)
+  --format {css,json,tailwind}
+                        输出格式 (默认: css)
+  -o, --output FILE     输出文件 (默认: stdout)
+
+示例:
+  super-dev design tokens --primary #3B82F6
+  super-dev design tokens --primary #10B981 --type analogous --format tailwind
+  super-dev design tokens --primary #FF6B6B --type complementary -o tokens.json
+
+# ===== 美学方向列表 =====
+可用美学方向 (26+ 种):
+
+极简方向:
+  brutalist_minimal    - 原始极简主义
+  japanese_zen         - 日式禅意
+  scandinavian         - 北欧风格
+  swiss_international  - 瑞士国际主义
+
+极繁方向:
+  maximalist_chaos     - 极繁混乱
+  memphis_group        - 孟菲斯集团
+  pop_art              - 波普艺术
+  vaporwave            - 蒸汽波
+
+复古未来:
+  retro_futurism       - 复古未来主义
+  cyberpunk            - 赛博朋克
+  art_deco             - 装饰艺术
+  steampunk            - 蒸汽朋克
+
+自然有机:
+  organic_natural      - 有机自然
+  biophilic            - 亲生物设计
+  earthy               - 大土色调
+  botanical            - 植物学
+
+奢华精致:
+  luxury_refined       - 奢华精致
+  french_elegance      - 法式优雅
+  italian_sophistication - 意式精致
+  artisanal            - 手工艺
+
+俏皮趣味:
+  playful_toy          - 俏皮玩具
+  kawaii               - 卡哇伊
+  whimsical            - 异想天开
+  neon_pop             - 霓虹流行
+
+编辑杂志:
+  editorial_magazine   - 编辑杂志
+  typography_centric   - 排版中心
+  grid_breaking        - 打破网格
+
+原始工业:
+  raw_industrial       - 原始工业
+  utilitarian          - 实用主义
+  grunge               - 垃圾摇滚
+  post_apocalyptic     - 末日后
+
+柔和梦幻:
+  soft_pastel          - 柔和粉彩
+  dreamy               - 梦幻
+  ethereal             - 空灵
+  glass_morphism       - 玻璃态
+```
+
 ### expert - 调用专家
 
 ```bash
@@ -441,6 +672,30 @@ super-dev spec show add-user-auth
 
 # 5. 完成后归档
 super-dev spec archive add-user-auth
+```
+
+### 示例 5: 设计智能引擎
+
+```bash
+# 搜索 Glassmorphism 风格
+super-dev design search "glass" --domain style -n 5
+
+# 生成 SaaS Fintech 设计系统
+super-dev design generate \
+  --product SaaS \
+  --industry Fintech \
+  --keywords "professional,trust,secure" \
+  --platform web
+
+# 生成单色配色 tokens
+super-dev design tokens --primary #3B82F6 --type monochromatic
+
+# 生成赛博朋克风格设计系统
+super-dev design generate \
+  --product Dashboard \
+  --industry Gaming \
+  --aesthetic cyberpunk \
+  -o ./design-system
 ```
 
 ---

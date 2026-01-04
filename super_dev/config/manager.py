@@ -10,7 +10,7 @@
 import os
 import yaml
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
 
@@ -26,9 +26,15 @@ class ProjectConfig:
 
     # 技术栈
     platform: str = "web"  # web, mobile, wechat, desktop
-    frontend: str = "react"  # react, vue, angular, svelte
+    frontend: str = "next"  # 扩展支持：next, remix, react-vite, gatsby, nuxt, vue-vite, angular, sveltekit, astro, solid, qwik
     backend: str = "node"  # node, python, go, java
     database: str = "postgresql"  # postgresql, mysql, mongodb, redis
+
+    # 前端配置 (扩展)
+    ui_library: Optional[str] = None  # UI 组件库
+    style_solution: Optional[str] = None  # 样式方案
+    state_management: List[str] = field(default_factory=list)  # 状态管理
+    testing_frameworks: List[str] = field(default_factory=list)  # 测试框架
 
     # 领域知识
     domain: str = ""  # fintech, ecommerce, medical, social, iot, education
@@ -63,12 +69,17 @@ class ConfigManager:
         "description": "A Super Dev project",
         "version": "1.0.0",
         "platform": "web",
-        "frontend": "react",
+        "frontend": "next",  # 默认使用 Next.js
         "backend": "node",
         "database": "postgresql",
         "domain": "",
         "quality_gate": 80,
         "output_dir": "output",
+        # 前端配置
+        "ui_library": None,
+        "style_solution": None,
+        "state_management": [],
+        "testing_frameworks": [],
     }
 
     def __init__(self, project_dir: Optional[Path] = None):

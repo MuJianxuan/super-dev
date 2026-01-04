@@ -8,7 +8,7 @@
 创建时间：2025-12-30
 """
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -20,9 +20,13 @@ class DocumentGenerator:
         name: str,
         description: str,
         platform: str = "web",
-        frontend: str = "react",
+        frontend: str = "next",
         backend: str = "node",
-        domain: str = ""
+        domain: str = "",
+        ui_library: Optional[str] = None,
+        style_solution: Optional[str] = None,
+        state_management: List[str] = None,
+        testing_frameworks: List[str] = None,
     ):
         """初始化文档生成器"""
         self.name = name
@@ -31,6 +35,10 @@ class DocumentGenerator:
         self.frontend = frontend
         self.backend = backend
         self.domain = domain or "general"
+        self.ui_library = ui_library
+        self.style_solution = style_solution
+        self.state_management = state_management or []
+        self.testing_frameworks = testing_frameworks or []
 
     def generate_prd(self) -> str:
         """生成高质量 PRD 文档"""
